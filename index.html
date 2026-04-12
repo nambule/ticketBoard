@@ -7,18 +7,26 @@
   <style>
     :root {
       color-scheme: light;
-      --bg: #eef1e8;
-      --panel: #fbfaf5;
+      --bg: #f3f6fb;
+      --bg-accent: #dbe6fb;
+      --panel: #f8fbff;
       --panel-strong: #ffffff;
-      --text: #1f2a21;
-      --muted: #5e675c;
-      --border: #d5dbce;
-      --accent: #2f6c4f;
-      --accent-hover: #25543d;
-      --chip: #e4ebde;
+      --text: #102033;
+      --muted: #66758a;
+      --border: #d7e0ef;
+      --accent: #2357d8;
+      --accent-hover: #1748c2;
+      --chip: #edf3ff;
       --error-bg: #fff1f1;
       --error-text: #a11a1a;
-      --shadow: 0 20px 45px rgba(36, 54, 31, 0.08);
+      --shadow: 0 18px 40px rgba(21, 45, 82, 0.08);
+      --pm-soft: #fff3f1;
+      --pm-line: #df5c4e;
+      --dev-soft: #fff8ed;
+      --dev-line: #de8b1f;
+      --done-soft: #eef8f1;
+      --done-line: #2f9d5b;
+      --flash: #ff6d47;
     }
 
     * {
@@ -28,34 +36,122 @@
     body {
       margin: 0;
       min-height: 100vh;
-      padding: 24px;
-      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      padding: 28px;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(164, 189, 146, 0.28), transparent 30%),
-        linear-gradient(180deg, #f7f8f2 0%, var(--bg) 100%);
+        linear-gradient(rgba(16, 32, 51, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 32, 51, 0.04) 1px, transparent 1px),
+        linear-gradient(180deg, #fbfdff 0%, var(--bg) 100%);
+      background-size: 24px 24px, 24px 24px, auto;
       color: var(--text);
     }
 
     .card {
       width: min(1440px, 100%);
       margin: 0 auto;
-      padding: 22px;
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      background: color-mix(in srgb, var(--panel) 92%, white);
+      padding: 0;
+      border: 1px solid rgba(16, 32, 51, 0.08);
+      border-radius: 30px;
+      background: rgba(255, 255, 255, 0.94);
       box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+      gap: 24px;
+      padding: 26px 28px 20px;
+      border-bottom: 1px solid rgba(16, 32, 51, 0.06);
+      background: rgba(250, 252, 255, 0.92);
+    }
+
+    .hero-copy {
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(35, 87, 216, 0.08);
+      color: var(--accent);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: 2rem;
+      margin: 0;
+      font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      font-size: 2.55rem;
       letter-spacing: 0.01em;
+      line-height: 1.02;
     }
 
     p {
-      margin: 0 0 14px;
+      margin: 0;
       color: var(--muted);
       line-height: 1.5;
+      max-width: 60ch;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      align-self: end;
+    }
+
+    .hero-stat {
+      padding: 14px 14px 12px;
+      border: 1px solid rgba(16, 32, 51, 0.07);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .hero-stat.phase-pm {
+      background: rgba(223, 92, 78, 0.08);
+      border-color: rgba(223, 92, 78, 0.18);
+    }
+
+    .hero-stat.phase-dev {
+      background: rgba(222, 139, 31, 0.09);
+      border-color: rgba(222, 139, 31, 0.2);
+    }
+
+    .hero-stat.phase-done {
+      background: rgba(47, 157, 91, 0.08);
+      border-color: rgba(47, 157, 91, 0.18);
+    }
+
+    .hero-stat.phase-pm strong {
+      color: #b4493e;
+    }
+
+    .hero-stat.phase-dev strong {
+      color: #b36d0d;
+    }
+
+    .hero-stat.phase-done strong {
+      color: #267d48;
+    }
+
+    .hero-stat strong {
+      display: block;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .hero-stat span {
+      color: var(--muted);
+      font-size: 0.85rem;
     }
 
     code {
@@ -96,10 +192,12 @@
       grid-template-columns: 2fr 140px 1fr 110px 110px 110px auto;
       gap: 12px;
       align-items: end;
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.64);
+      padding: 16px 18px;
+      border: 1px solid rgba(16, 32, 51, 0.06);
+      border-radius: 0;
+      background: rgba(247, 250, 255, 0.88);
+      border-left: 0;
+      border-right: 0;
     }
 
     .actions {
@@ -124,6 +222,8 @@
       font-size: 0.82rem;
       margin-bottom: 6px;
       color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
     .field-compact input,
@@ -134,7 +234,7 @@
     .session-note {
       font-size: 0.88rem;
       color: var(--muted);
-      margin-top: 10px;
+      margin: 10px 28px 0;
     }
 
     .actions button:hover {
@@ -152,17 +252,26 @@
 
     .summary {
       display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 24px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 22px 28px 0;
     }
 
     .summary:empty {
       display: none;
     }
 
+    .summary-left,
+    .summary-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
     .summary-chip {
-      padding: 8px 12px;
+      padding: 9px 13px;
       border: 1px solid var(--border);
       border-radius: 999px;
       background: var(--chip);
@@ -174,11 +283,49 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 12px;
+      padding: 9px 13px;
       border: 1px solid var(--border);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.72);
+      background: rgba(255, 255, 255, 0.85);
       color: var(--muted);
+    }
+
+    .progress-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 13px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--muted);
+    }
+
+    .progress-label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .progress-track {
+      width: 120px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(16, 32, 51, 0.08);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--done-line);
+    }
+
+    .progress-value {
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
     }
 
     .toggle input {
@@ -187,27 +334,27 @@
     }
 
     .empty-state {
-      margin-top: 24px;
-      padding: 18px;
-      border: 1px dashed var(--border);
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.55);
+      margin: 22px 28px 0;
+      padding: 18px 20px;
+      border: 1px dashed rgba(16, 32, 51, 0.12);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.58);
       color: var(--muted);
     }
 
     .workspace {
-      margin-top: 24px;
+      margin-top: 18px;
       width: 100%;
     }
 
     .board {
       display: grid;
       grid-auto-flow: column;
-      grid-auto-columns: minmax(300px, 1fr);
-      gap: 18px;
+      grid-auto-columns: minmax(326px, 1fr);
+      gap: 24px;
       align-items: start;
       overflow-x: auto;
-      padding-bottom: 8px;
+      padding: 10px 28px 24px;
       width: 100%;
     }
 
@@ -217,63 +364,144 @@
 
     .column {
       padding: 16px;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.72);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(16, 32, 51, 0.06);
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 18px 32px rgba(26, 60, 112, 0.05);
+      position: relative;
+    }
+
+    .column::before {
+      content: "";
+      position: absolute;
+      inset: 14px 14px auto 14px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--phase-line, var(--pm-line));
+    }
+
+    .column.phase-pm {
+      background: var(--pm-soft);
+      --phase-line: var(--pm-line);
+    }
+
+    .column.phase-dev {
+      background: var(--dev-soft);
+      --phase-line: var(--dev-line);
+    }
+
+    .column.phase-done {
+      background: var(--done-soft);
+      --phase-line: var(--done-line);
     }
 
     .column-header {
-      display: flex;
+      display: grid;
+      gap: 10px;
+      margin-bottom: 18px;
+      padding-top: 18px;
+      align-items: start;
+    }
+
+    .column-title-row {
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 8px;
+      width: fit-content;
     }
 
     .column-title {
       margin: 0;
-      font-size: 1.05rem;
+      font-size: 1.06rem;
       font-weight: 600;
     }
 
-    .column-count {
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: var(--chip);
+    .column-phase {
+      grid-column: 1 / 2;
       color: var(--muted);
-      font-size: 0.85rem;
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .column-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: rgba(16, 32, 51, 0.06);
+      color: var(--muted);
+      font-size: 0.76rem;
       font-weight: 600;
+      border: 1px solid rgba(16, 32, 51, 0.05);
+      box-shadow: none;
     }
 
     .ticket-list {
       display: grid;
-      gap: 14px;
+      gap: 12px;
     }
 
     .ticket {
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
+      padding: 14px 16px;
+      border: 1px solid rgba(18, 32, 51, 0.08);
+      border-radius: 20px;
       background: var(--panel-strong);
-      box-shadow: 0 10px 22px rgba(41, 58, 33, 0.08);
+      box-shadow: 0 10px 20px rgba(23, 53, 100, 0.05);
       cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+      position: relative;
+    }
+
+    .ticket::before {
+      content: "";
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      top: 0;
+      height: 2px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 24%, transparent);
+      opacity: 0;
+      transition: opacity 120ms ease;
     }
 
     .ticket h3 {
       margin: 0;
       font-size: 1rem;
-      line-height: 1.35;
+      line-height: 1.4;
       font-weight: 500;
+    }
+
+    .ticket-id {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .ticket.active {
       border-color: var(--accent);
-      box-shadow: 0 12px 24px rgba(47, 108, 79, 0.18);
+      box-shadow: 0 18px 28px rgba(35, 100, 255, 0.14);
     }
 
     .ticket:hover {
-      border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+      border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+      transform: translateY(-1px);
+    }
+
+    .ticket.active::before,
+    .ticket:hover::before {
+      opacity: 1;
     }
 
     .drawer {
@@ -292,37 +520,87 @@
     }
 
     .drawer-panel {
-      width: min(440px, 100vw);
+      width: min(560px, 100vw);
       height: 100vh;
       overflow-y: auto;
-      padding: 20px;
-      background: rgba(255, 255, 255, 0.96);
-      border-left: 1px solid var(--border);
-      box-shadow: -12px 0 28px rgba(41, 58, 33, 0.12);
+      padding: 30px 30px 40px;
+      background: rgba(250, 252, 255, 0.98);
+      border-left: 1px solid rgba(16, 32, 51, 0.08);
+      box-shadow: -18px 0 38px rgba(20, 46, 86, 0.12);
       pointer-events: auto;
     }
 
     .drawer-close {
       width: auto;
       margin-left: auto;
-      margin-bottom: 12px;
-      padding: 8px 12px;
+      margin-bottom: 16px;
+      padding: 9px 14px;
       border: 1px solid var(--border);
-      background: var(--panel);
+      background: #fff;
       color: var(--text);
       cursor: pointer;
     }
 
+    .ticket-detail {
+      display: grid;
+      gap: 20px;
+    }
+
     .ticket-detail h2 {
-      margin: 0 0 12px;
-      font-size: 1.15rem;
-      line-height: 1.35;
+      margin: 0;
+      font-size: 1.5rem;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+    }
+
+    .ticket-sheet-top {
+      display: grid;
+      gap: 12px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid rgba(16, 32, 51, 0.08);
+    }
+
+    .ticket-id-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .ticket-id-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      background: rgba(35, 100, 255, 0.1);
+      color: var(--accent);
+      padding: 6px 10px;
+      font-weight: 600;
+    }
+
+    .detail-section {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border: 1px solid rgba(16, 32, 51, 0.07);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .detail-section h3 {
+      margin: 0;
+      font-size: 0.86rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      font-weight: 600;
     }
 
     .detail-meta {
       display: grid;
-      gap: 6px;
-      margin-bottom: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
       color: var(--muted);
       font-size: 0.92rem;
     }
@@ -336,13 +614,13 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-bottom: 12px;
     }
 
     .tag {
-      padding: 5px 10px;
+      padding: 6px 11px;
       border-radius: 999px;
-      background: var(--chip);
+      background: #fff;
+      border: 1px solid rgba(18, 32, 51, 0.08);
       color: var(--text);
       font-size: 0.82rem;
       font-weight: 500;
@@ -350,8 +628,8 @@
 
     .ticket-description {
       color: var(--text);
-      line-height: 1.5;
-      font-size: 0.94rem;
+      line-height: 1.65;
+      font-size: 0.96rem;
     }
 
     .ticket-description p {
@@ -363,13 +641,55 @@
       margin-bottom: 0;
     }
 
+    .phase-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      width: fit-content;
+    }
+
+    .phase-chip.phase-pm {
+      background: rgba(223, 92, 78, 0.14);
+      color: #b4493e;
+    }
+
+    .phase-chip.phase-dev {
+      background: rgba(222, 139, 31, 0.16);
+      color: #b36d0d;
+    }
+
+    .phase-chip.phase-done {
+      background: rgba(47, 157, 91, 0.14);
+      color: #267d48;
+    }
+
     @media (max-width: 880px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .summary {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
       .grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .detail-meta {
+        grid-template-columns: 1fr;
       }
     }
 
     @media (max-width: 640px) {
+      body {
+        padding: 16px;
+      }
+
       .grid {
         grid-template-columns: 1fr;
       }
@@ -385,14 +705,36 @@
 
       .board {
         grid-auto-columns: minmax(280px, 90vw);
+        padding-left: 16px;
+        padding-right: 16px;
       }
     }
   </style>
 </head>
 <body>
   <main class="card">
-    <h1>Tickets Kanban</h1>
-    <p>Connect once to the tickets API, then work mainly from the board grouped by <code>statut</code>.</p>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">Delivery Board</div>
+        <h1>Tickets Kanban</h1>
+        <p>Connect once to the tickets API, then work from a phase-driven board that keeps the delivery flow readable at a glance.</p>
+      </div>
+
+      <div class="hero-stats">
+        <div class="hero-stat phase-pm">
+          <strong>PM</strong>
+          <span>Suggéré to analyse</span>
+        </div>
+        <div class="hero-stat phase-dev">
+          <strong>Dev</strong>
+          <span>Estimate to relecture</span>
+        </div>
+        <div class="hero-stat phase-done">
+          <strong>Done</strong>
+          <span>Delivered and closed</span>
+        </div>
+      </div>
+    </section>
 
     <div id="originWarning" class="error"></div>
 
@@ -588,10 +930,17 @@
 
       for (const [status, items] of groupedTickets) {
         const column = document.createElement("section");
-        column.className = "column";
+        column.className = `column ${getPhaseClass(status)}`;
 
         const header = document.createElement("div");
         header.className = "column-header";
+
+        const phase = document.createElement("div");
+        phase.className = "column-phase";
+        phase.textContent = getPhaseLabel(status);
+
+        const titleRow = document.createElement("div");
+        titleRow.className = "column-title-row";
 
         const title = document.createElement("h2");
         title.className = "column-title";
@@ -599,9 +948,11 @@
 
         const count = document.createElement("span");
         count.className = "column-count";
-        count.textContent = `${items.length} ticket${items.length > 1 ? "s" : ""}`;
+        count.textContent = String(items.length);
+        count.setAttribute("aria-label", `${items.length} ticket${items.length > 1 ? "s" : ""}`);
 
-        header.append(title, count);
+        titleRow.append(title, count);
+        header.append(phase, titleRow);
 
         const list = document.createElement("div");
         list.className = "ticket-list";
@@ -628,10 +979,46 @@
     function renderSummary(tickets, groupedTickets) {
       summary.innerHTML = "";
 
+      const summaryLeft = document.createElement("div");
+      summaryLeft.className = "summary-left";
+
+      const summaryRight = document.createElement("div");
+      summaryRight.className = "summary-right";
+
+      const trackedTickets = tickets.filter((ticket) => {
+        const status = normalizeValue(ticket["statut"]) || "Sans statut";
+        return !OPTIONAL_STATUSES.has(status);
+      });
+
       const total = document.createElement("div");
       total.className = "summary-chip";
-      total.textContent = `${tickets.length} tickets`;
-      summary.appendChild(total);
+      total.textContent = `${trackedTickets.length} tickets`;
+      summaryLeft.appendChild(total);
+
+      const doneCount = trackedTickets.filter((ticket) => getPhaseClass(normalizeValue(ticket["statut"]) || "Sans statut") === "phase-done").length;
+      const progress = trackedTickets.length > 0 ? Math.round((doneCount / trackedTickets.length) * 100) : 0;
+
+      const progressChip = document.createElement("div");
+      progressChip.className = "progress-chip";
+
+      const progressLabel = document.createElement("span");
+      progressLabel.className = "progress-label";
+      progressLabel.textContent = "Done";
+
+      const progressTrack = document.createElement("div");
+      progressTrack.className = "progress-track";
+
+      const progressFill = document.createElement("div");
+      progressFill.className = "progress-fill";
+      progressFill.style.width = `${progress}%`;
+      progressTrack.appendChild(progressFill);
+
+      const progressValue = document.createElement("span");
+      progressValue.className = "progress-value";
+      progressValue.textContent = `${doneCount}/${trackedTickets.length}`;
+
+      progressChip.append(progressLabel, progressTrack, progressValue);
+      summaryRight.appendChild(progressChip);
 
       const toggle = document.createElement("label");
       toggle.className = "toggle";
@@ -651,7 +1038,9 @@
       text.textContent = "Show reserve/cancelled/refused";
 
       toggle.append(checkbox, text);
-      summary.appendChild(toggle);
+      summaryLeft.appendChild(toggle);
+
+      summary.append(summaryLeft, summaryRight);
     }
 
     function groupTicketsByStatus(tickets) {
@@ -699,9 +1088,13 @@
       article.className = "ticket";
       article.tabIndex = 0;
 
+      const id = document.createElement("span");
+      id.className = "ticket-id";
+      id.textContent = `Ticket ${normalizeValue(ticket["ticket-id"]) || "?"}`;
+
       const title = document.createElement("h3");
-      title.textContent = `${normalizeValue(ticket["ticket-id"]) || "?"} - ${normalizeValue(ticket["titre"]) || "Sans titre"}`;
-      article.appendChild(title);
+      title.textContent = normalizeValue(ticket["titre"]) || "Sans titre";
+      article.append(id, title);
 
       const activate = () => {
         board.querySelectorAll(".ticket.active").forEach((element) => {
@@ -726,13 +1119,35 @@
     function renderTicketDetail(ticket) {
       ticketDetail.innerHTML = "";
 
+      const status = normalizeValue(ticket["statut"]) || "Sans statut";
+      const phaseClass = getPhaseClass(status);
+
+      const top = document.createElement("section");
+      top.className = "ticket-sheet-top";
+
+      const idLine = document.createElement("div");
+      idLine.className = "ticket-id-line";
+
+      const idBadge = document.createElement("span");
+      idBadge.className = "ticket-id-badge";
+      idBadge.textContent = normalizeValue(ticket["ticket-id"]) || "?";
+
+      const phaseChip = document.createElement("span");
+      phaseChip.className = `phase-chip ${phaseClass}`;
+      phaseChip.textContent = getPhaseLabel(status);
+
+      const statusText = document.createElement("span");
+      statusText.textContent = status;
+
       const title = document.createElement("h2");
-      title.textContent = `${normalizeValue(ticket["ticket-id"]) || "?"} - ${normalizeValue(ticket["titre"]) || "Sans titre"}`;
-      ticketDetail.appendChild(title);
+      title.textContent = normalizeValue(ticket["titre"]) || "Sans titre";
+
+      idLine.append(idBadge, phaseChip, statusText);
+      top.append(idLine, title);
+      ticketDetail.appendChild(top);
 
       const meta = document.createElement("div");
       meta.className = "detail-meta";
-      appendMeta(meta, "Statut", ticket["statut"]);
       appendMeta(meta, "Auteur", ticket["auteur"]);
       appendMeta(meta, "Type", ticket["type"]);
       appendMeta(meta, "Module", ticket["module"]);
@@ -744,7 +1159,14 @@
       appendMeta(meta, "Estimation", ticket["estimation"]);
 
       if (meta.childElementCount > 0) {
-        ticketDetail.appendChild(meta);
+        const metaSection = document.createElement("section");
+        metaSection.className = "detail-section";
+
+        const metaTitle = document.createElement("h3");
+        metaTitle.textContent = "Ticket facts";
+
+        metaSection.append(metaTitle, meta);
+        ticketDetail.appendChild(metaSection);
       }
 
       const tags = document.createElement("div");
@@ -754,16 +1176,72 @@
       appendTag(tags, ticket["client"]);
 
       if (tags.childElementCount > 0) {
-        ticketDetail.appendChild(tags);
+        const tagSection = document.createElement("section");
+        tagSection.className = "detail-section";
+
+        const tagTitle = document.createElement("h3");
+        tagTitle.textContent = "Context";
+
+        tagSection.append(tagTitle, tags);
+        ticketDetail.appendChild(tagSection);
       }
 
       const description = normalizeDescription(ticket["description"]);
       if (description !== "") {
+        const descriptionSection = document.createElement("section");
+        descriptionSection.className = "detail-section";
+
+        const descriptionTitle = document.createElement("h3");
+        descriptionTitle.textContent = "Description";
+
         const content = document.createElement("div");
         content.className = "ticket-description";
         content.innerHTML = description;
-        ticketDetail.appendChild(content);
+
+        descriptionSection.append(descriptionTitle, content);
+        ticketDetail.appendChild(descriptionSection);
       }
+    }
+
+    function getPhaseClass(status) {
+      const pmStatuses = new Set([
+        "Suggéré",
+        "En cours de qualification",
+        "Qualifié",
+        "En cours d'analyse"
+      ]);
+      const devStatuses = new Set([
+        "A estimer",
+        "Prêt (à être développé)",
+        "En attente",
+        "Démarré",
+        "Homologation",
+        "Relecture"
+      ]);
+
+      if (pmStatuses.has(status)) {
+        return "phase-pm";
+      }
+
+      if (devStatuses.has(status)) {
+        return "phase-dev";
+      }
+
+      return "phase-done";
+    }
+
+    function getPhaseLabel(status) {
+      const phaseClass = getPhaseClass(status);
+
+      if (phaseClass === "phase-pm") {
+        return "PM phase";
+      }
+
+      if (phaseClass === "phase-dev") {
+        return "Dev phase";
+      }
+
+      return "Done phase";
     }
 
     function openDrawer() {
