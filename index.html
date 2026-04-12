@@ -239,6 +239,10 @@
       padding: 10px 12px;
     }
 
+    .field-wide {
+      grid-column: span 2;
+    }
+
     .session-note {
       font-size: 0.88rem;
       color: var(--muted);
@@ -593,6 +597,36 @@
       gap: 20px;
     }
 
+    .llm-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .secondary-button {
+      width: auto;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(16, 32, 51, 0.08);
+      background: #fff;
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .secondary-button:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+
+    .summary-output {
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+    }
+
     .ticket-detail h2 {
       margin: 0;
       font-size: 1.5rem;
@@ -839,6 +873,21 @@
       <div class="actions">
         <button id="sendRequest" type="button">Load Tickets</button>
       </div>
+
+      <div class="field-compact field-wide">
+        <label for="azureEndpoint">Azure OpenAI Endpoint</label>
+        <input id="azureEndpoint" type="url" value="" placeholder="https://your-resource.openai.azure.com">
+      </div>
+
+      <div class="field-compact field-wide">
+        <label for="azureDeployment">Azure Model Deployment</label>
+        <input id="azureDeployment" type="text" value="" placeholder="gpt-4.1 / deployment name">
+      </div>
+
+      <div class="field-compact field-wide">
+        <label for="azureApiKey">Azure OpenAI API Key</label>
+        <input id="azureApiKey" type="password" value="" placeholder="Azure API key">
+      </div>
     </div>
 
     <div class="session-note">Connection settings are session-level. Use the filters above to build the request URL, then work from the board.</div>
@@ -862,6 +911,9 @@
     const endpointInput = document.getElementById("endpoint");
     const methodInput = document.getElementById("method");
     const headersInput = document.getElementById("headers");
+    const azureEndpointInput = document.getElementById("azureEndpoint");
+    const azureDeploymentInput = document.getElementById("azureDeployment");
+    const azureApiKeyInput = document.getElementById("azureApiKey");
     const ticketIdInput = document.getElementById("ticketid");
     const moduleIdInput = document.getElementById("moduleid");
     const lotIdInput = document.getElementById("lotid");
@@ -874,6 +926,7 @@
     const ticketDetail = document.getElementById("ticketDetail");
     const drawer = document.getElementById("drawer");
     const closeDrawerButton = document.getElementById("closeDrawer");
+    const AZURE_OPENAI_API_VERSION = "2025-04-01-preview";
     const STATUS_ORDER = [
       "Suggéré",
       "En cours de qualification",
@@ -1397,6 +1450,41 @@
         descriptionSection.append(descriptionTitle, content);
         ticketDetail.appendChild(descriptionSection);
       }
+
+      const summarySection = document.createElement("section");
+      summarySection.className = "detail-section";
+
+      const summaryTitle = document.createElement("h3");
+      summaryTitle.textContent = "AI summary";
+
+      const llmTools = document.createElement("div");
+      llmTools.className = "llm-tools";
+
+      const summarizeButton = document.createElement("button");
+      summarizeButton.className = "secondary-button";
+      summarizeButton.type = "button";
+      summarizeButton.textContent = "Summarize";
+
+      const summaryOutput = document.createElement("div");
+      summaryOutput.className = "summary-output";
+      summaryOutput.textContent = "Generate a short summary of this ticket with the connected Azure OpenAI model.";
+
+      summarizeButton.addEventListener("click", async () => {
+        summarizeButton.disabled = true;
+        summaryOutput.textContent = "Generating summary...";
+
+        try {
+          summaryOutput.textContent = await summarizeTicket(ticket);
+        } catch (error) {
+          summaryOutput.textContent = String(error);
+        } finally {
+          summarizeButton.disabled = false;
+        }
+      });
+
+      llmTools.appendChild(summarizeButton);
+      summarySection.append(summaryTitle, llmTools, summaryOutput);
+      ticketDetail.appendChild(summarySection);
     }
 
     function getPhaseClass(status) {
@@ -1509,6 +1597,97 @@
 
       const years = Math.floor(days / 365);
       return `${years} year${years === 1 ? "" : "s"} ago`;
+    }
+
+    async function summarizeTicket(ticket) {
+      const endpoint = normalizeValue(azureEndpointInput.value);
+      const deployment = normalizeValue(azureDeploymentInput.value);
+      const apiKey = normalizeValue(azureApiKeyInput.value);
+
+      if (!endpoint || !deployment || !apiKey) {
+        throw new Error("Missing Azure OpenAI settings. Fill endpoint, deployment, and API key.");
+      }
+
+      const azureUrl = buildAzureChatCompletionsUrl(endpoint, deployment);
+
+      const response = await fetch("proxy.php", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          url: azureUrl,
+          method: "POST",
+          headers: {
+            "api-key": apiKey
+          },
+          body: {
+            messages: [
+              {
+                role: "system",
+                content: "You summarize software delivery tickets in concise professional French. Focus on intent, scope, and current state."
+              },
+              {
+                role: "user",
+                content: buildTicketSummaryPrompt(ticket)
+              }
+            ],
+            temperature: 0.2,
+            max_completion_tokens: 220
+          }
+        })
+      });
+
+      const payload = await response.json();
+      if (!response.ok || !payload || !payload.ok) {
+        const message = payload?.data?.error?.message || payload?.error || "Azure OpenAI request failed.";
+        throw new Error(message);
+      }
+
+      const content = payload?.data?.choices?.[0]?.message?.content;
+      if (!content || typeof content !== "string") {
+        throw new Error("The model response did not contain a summary.");
+      }
+
+      return content.trim();
+    }
+
+    function buildAzureChatCompletionsUrl(endpoint, deployment) {
+      let parsedUrl;
+
+      try {
+        parsedUrl = new URL(endpoint);
+      } catch {
+        throw new Error("Azure OpenAI endpoint is invalid.");
+      }
+
+      const baseEndpoint = parsedUrl.origin;
+      return `${baseEndpoint}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${AZURE_OPENAI_API_VERSION}`;
+    }
+
+    function buildTicketSummaryPrompt(ticket) {
+      const fields = [
+        `Ticket: ${normalizeValue(ticket["ticket-id"])}`,
+        `Titre: ${normalizeValue(ticket["titre"])}`,
+        `Statut: ${normalizeValue(ticket["statut"])}`,
+        `Type: ${normalizeValue(ticket["type"])}`,
+        `Auteur: ${normalizeValue(ticket["auteur"])}`,
+        `Module: ${normalizeValue(ticket["module"])}`,
+        `Client: ${normalizeValue(ticket["client"])}`,
+        `Date ouverture: ${normalizeValue(ticket["date-ouverture"])}`,
+        `Sprint: ${normalizeValue(ticket["sprint"])}`,
+        `Lot: ${normalizeValue(ticket["lot"])}`,
+        `Description: ${normalizeDescription(ticket["description"])}`
+      ].filter((line) => !line.endsWith(": "));
+
+      return [
+        "Resumer ce ticket en francais en 1 a 2 phrases tres courtes.",
+        "Donner uniquement une breve synthese de la demande utilisateur.",
+        "Ne pas inventer d'information.",
+        "",
+        ...fields
+      ].join("\n");
     }
 
     function openDrawer() {
