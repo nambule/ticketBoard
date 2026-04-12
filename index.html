@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tickets Kanban</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef1e8;
+      --panel: #fbfaf5;
+      --panel-strong: #ffffff;
+      --text: #1f2a21;
+      --muted: #5e675c;
+      --border: #d5dbce;
+      --accent: #2f6c4f;
+      --accent-hover: #25543d;
+      --chip: #e4ebde;
+      --error-bg: #fff1f1;
+      --error-text: #a11a1a;
+      --shadow: 0 20px 45px rgba(36, 54, 31, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(164, 189, 146, 0.28), transparent 30%),
+        linear-gradient(180deg, #f7f8f2 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    .card {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: color-mix(in srgb, var(--panel) 92%, white);
+      box-shadow: var(--shadow);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+      letter-spacing: 0.01em;
+    }
+
+    p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    code {
+      font-family: "SFMono-Regular", Consolas, monospace;
+    }
+
+    label {
+      display: block;
+      margin: 0 0 8px;
+      font-weight: 600;
+    }
+
+    input,
+    textarea,
+    select,
+    button {
+      width: 100%;
+      font: inherit;
+      border-radius: 12px;
+    }
+
+    input,
+    textarea,
+    select {
+      padding: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 2fr 140px 1fr 110px 110px 110px auto;
+      gap: 12px;
+      align-items: end;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.64);
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .actions button {
+      width: auto;
+      min-width: 140px;
+      border: 0;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #fff;
+      background: var(--accent);
+    }
+
+    .field-compact label {
+      font-size: 0.82rem;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+
+    .field-compact input,
+    .field-compact select {
+      padding: 10px 12px;
+    }
+
+    .session-note {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .actions button:hover {
+      background: var(--accent-hover);
+    }
+
+    .error {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--error-bg);
+      color: var(--error-text);
+    }
+
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .summary:empty {
+      display: none;
+    }
+
+    .summary-chip {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--chip);
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--muted);
+    }
+
+    .toggle input {
+      width: auto;
+      margin: 0;
+    }
+
+    .empty-state {
+      margin-top: 24px;
+      padding: 18px;
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.55);
+      color: var(--muted);
+    }
+
+    .workspace {
+      margin-top: 24px;
+      width: 100%;
+    }
+
+    .board {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(300px, 1fr);
+      gap: 18px;
+      align-items: start;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      width: 100%;
+    }
+
+    .board:empty {
+      display: none;
+    }
+
+    .column {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .column-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .column-count {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .ticket-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .ticket {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel-strong);
+      box-shadow: 0 10px 22px rgba(41, 58, 33, 0.08);
+      cursor: pointer;
+    }
+
+    .ticket h3 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.35;
+      font-weight: 500;
+    }
+
+    .ticket.active {
+      border-color: var(--accent);
+      box-shadow: 0 12px 24px rgba(47, 108, 79, 0.18);
+    }
+
+    .ticket:hover {
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    }
+
+    .drawer {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: stretch;
+      justify-content: flex-end;
+      background: rgba(31, 42, 33, 0.16);
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .drawer.open {
+      display: flex;
+    }
+
+    .drawer-panel {
+      width: min(440px, 100vw);
+      height: 100vh;
+      overflow-y: auto;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.96);
+      border-left: 1px solid var(--border);
+      box-shadow: -12px 0 28px rgba(41, 58, 33, 0.12);
+      pointer-events: auto;
+    }
+
+    .drawer-close {
+      width: auto;
+      margin-left: auto;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .ticket-detail h2 {
+      margin: 0 0 12px;
+      font-size: 1.15rem;
+      line-height: 1.35;
+    }
+
+    .detail-meta {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .detail-meta strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .detail-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tag {
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--text);
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+
+    .ticket-description {
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 0.94rem;
+    }
+
+    .ticket-description p {
+      margin: 0 0 10px;
+      color: inherit;
+    }
+
+    .ticket-description p:last-child {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 880px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .actions button {
+        width: 100%;
+      }
+
+      .board {
+        grid-auto-columns: minmax(280px, 90vw);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Tickets Kanban</h1>
+    <p>Connect once to the tickets API, then work mainly from the board grouped by <code>statut</code>.</p>
+
+    <div id="originWarning" class="error"></div>
+
+    <div class="grid">
+      <div class="field-compact">
+        <label for="endpoint">Endpoint URL</label>
+        <input id="endpoint" type="url" value="">
+      </div>
+
+      <div class="field-compact">
+        <label for="method">HTTP Method</label>
+        <select id="method">
+          <option selected>GET</option>
+          <option>POST</option>
+          <option>PUT</option>
+          <option>PATCH</option>
+          <option>DELETE</option>
+        </select>
+      </div>
+
+      <div class="field-compact">
+        <label for="headers">X-API-KEY Header</label>
+        <input id="headers" type="text" placeholder='{"X-API-KEY":"your-api-key"}' value='{"X-API-KEY":""}'>
+      </div>
+
+      <div class="field-compact">
+        <label for="ticketid">ticketid</label>
+        <input id="ticketid" type="text" value="-1">
+      </div>
+
+      <div class="field-compact">
+        <label for="moduleid">moduleid</label>
+        <input id="moduleid" type="text" value="-1">
+      </div>
+
+      <div class="field-compact">
+        <label for="lotid">lotid</label>
+        <input id="lotid" type="text" value="-1">
+      </div>
+
+      <div class="actions">
+        <button id="sendRequest" type="button">Load Tickets</button>
+      </div>
+    </div>
+
+    <div class="session-note">Connection settings are session-level. Use the filters above to build the request URL, then work from the board.</div>
+
+    <div id="errorMessage" class="error"></div>
+    <div id="summary" class="summary"></div>
+    <div id="emptyState" class="empty-state">The board will appear here after the API returns a JSON array of tickets.</div>
+    <div class="workspace">
+      <section id="board" class="board" aria-live="polite"></section>
+    </div>
+  </main>
+
+  <div id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-panel">
+      <button id="closeDrawer" class="drawer-close" type="button">Close</button>
+      <aside id="ticketDetail" class="ticket-detail">Select a ticket to view its details.</aside>
+    </div>
+  </div>
+
+  <script>
+    const endpointInput = document.getElementById("endpoint");
+    const methodInput = document.getElementById("method");
+    const headersInput = document.getElementById("headers");
+    const ticketIdInput = document.getElementById("ticketid");
+    const moduleIdInput = document.getElementById("moduleid");
+    const lotIdInput = document.getElementById("lotid");
+    const sendButton = document.getElementById("sendRequest");
+    const errorMessage = document.getElementById("errorMessage");
+    const originWarning = document.getElementById("originWarning");
+    const summary = document.getElementById("summary");
+    const board = document.getElementById("board");
+    const emptyState = document.getElementById("emptyState");
+    const ticketDetail = document.getElementById("ticketDetail");
+    const drawer = document.getElementById("drawer");
+    const closeDrawerButton = document.getElementById("closeDrawer");
+    const STATUS_ORDER = [
+      "Suggéré",
+      "En cours de qualification",
+      "Qualifié",
+      "En cours d'analyse",
+      "A estimer",
+      "Prêt (à être développé)",
+      "En attente",
+      "Démarré",
+      "Homologation",
+      "Relecture",
+      "Livré",
+      "A corriger",
+      "Clos",
+      "Réserve",
+      "Annulé",
+      "Refusé / won't fix"
+    ];
+    const OPTIONAL_STATUSES = new Set(["Réserve", "Annulé", "Refusé / won't fix"]);
+    let showOptionalStatuses = false;
+
+    if (window.location.protocol === "file:") {
+      originWarning.textContent = "Open this page through a local web server. Loading it with file:// cannot call proxy.php reliably.";
+      originWarning.style.display = "block";
+      sendButton.disabled = true;
+    }
+
+    async function sendRequest() {
+      errorMessage.style.display = "none";
+      errorMessage.textContent = "";
+      emptyState.textContent = "Loading tickets...";
+      emptyState.style.display = "block";
+      summary.innerHTML = "";
+      board.innerHTML = "";
+      ticketDetail.textContent = "Select a ticket to view its details.";
+      closeDrawer();
+
+      const rawHeaders = headersInput.value.trim();
+      let parsedHeaders = {};
+
+      if (rawHeaders !== "") {
+        try {
+          parsedHeaders = JSON.parse(rawHeaders);
+        } catch {
+          showError("The headers JSON is invalid.");
+          emptyState.textContent = "Request not sent.";
+          return;
+        }
+
+        if (!parsedHeaders || Array.isArray(parsedHeaders) || typeof parsedHeaders !== "object") {
+          showError("Headers must be a JSON object.");
+          emptyState.textContent = "Request not sent.";
+          return;
+        }
+      }
+
+      try {
+        const finalUrl = buildEndpointUrl(
+          endpointInput.value.trim(),
+          ticketIdInput.value.trim(),
+          moduleIdInput.value.trim(),
+          lotIdInput.value.trim()
+        );
+
+        const response = await fetch("proxy.php", {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            url: finalUrl,
+            method: methodInput.value,
+            headers: parsedHeaders
+          })
+        });
+
+        const payload = await response.json();
+
+        if (!response.ok) {
+          showError(payload.error || "The proxy request failed.");
+        }
+
+        renderBoard(payload);
+      } catch (error) {
+        showError("Request failed. Make sure this page is served by a local web server and that proxy.php is reachable.");
+        emptyState.textContent = String(error);
+      }
+    }
+
+    function renderBoard(payload) {
+      const rawData = payload && typeof payload === "object" && "data" in payload
+        ? payload.data
+        : payload;
+      const tickets = Array.isArray(rawData) ? sanitizeDescriptions(rawData) : null;
+
+      if (!tickets) {
+        showError("The API response is not a JSON array of tickets.");
+        emptyState.textContent = "No board rendered.";
+        return;
+      }
+
+      window.lastTicketsData = tickets;
+
+      if (tickets.length === 0) {
+        emptyState.textContent = "The API returned an empty tickets list.";
+        ticketDetail.textContent = "No ticket selected.";
+        closeDrawer();
+        return;
+      }
+
+      const groupedTickets = groupTicketsByStatus(tickets);
+      renderSummary(tickets, groupedTickets);
+      board.innerHTML = "";
+
+      for (const [status, items] of groupedTickets) {
+        const column = document.createElement("section");
+        column.className = "column";
+
+        const header = document.createElement("div");
+        header.className = "column-header";
+
+        const title = document.createElement("h2");
+        title.className = "column-title";
+        title.textContent = status;
+
+        const count = document.createElement("span");
+        count.className = "column-count";
+        count.textContent = `${items.length} ticket${items.length > 1 ? "s" : ""}`;
+
+        header.append(title, count);
+
+        const list = document.createElement("div");
+        list.className = "ticket-list";
+
+        for (const ticket of items) {
+          list.appendChild(createTicketCard(ticket));
+        }
+
+        column.append(header, list);
+        board.appendChild(column);
+      }
+
+      emptyState.style.display = "none";
+    }
+
+    function buildEndpointUrl(baseUrl, ticketId, moduleId, lotId) {
+      const url = new URL(baseUrl);
+      url.searchParams.set("ticketid", ticketId || "-1");
+      url.searchParams.set("moduleid", moduleId || "-1");
+      url.searchParams.set("lotid", lotId || "-1");
+      return url.toString();
+    }
+
+    function renderSummary(tickets, groupedTickets) {
+      summary.innerHTML = "";
+
+      const total = document.createElement("div");
+      total.className = "summary-chip";
+      total.textContent = `${tickets.length} tickets`;
+      summary.appendChild(total);
+
+      const toggle = document.createElement("label");
+      toggle.className = "toggle";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = showOptionalStatuses;
+      checkbox.addEventListener("change", () => {
+        showOptionalStatuses = checkbox.checked;
+        const visibleTickets = getVisibleTickets();
+        if (visibleTickets) {
+          renderBoard({ data: visibleTickets });
+        }
+      });
+
+      const text = document.createElement("span");
+      text.textContent = "Show reserve/cancelled/refused";
+
+      toggle.append(checkbox, text);
+      summary.appendChild(toggle);
+    }
+
+    function groupTicketsByStatus(tickets) {
+      const groups = new Map();
+
+      for (const ticket of tickets) {
+        const status = normalizeValue(ticket["statut"]) || "Sans statut";
+
+        if (!groups.has(status)) {
+          groups.set(status, []);
+        }
+
+        groups.get(status).push(ticket);
+      }
+
+      const orderedGroups = new Map();
+
+      for (const status of STATUS_ORDER) {
+        if (groups.has(status)) {
+          if (!showOptionalStatuses && OPTIONAL_STATUSES.has(status)) {
+            continue;
+          }
+
+          orderedGroups.set(status, groups.get(status));
+        }
+      }
+
+      const remainingStatuses = [...groups.keys()]
+        .filter((status) => !STATUS_ORDER.includes(status))
+        .sort((left, right) => left.localeCompare(right, "fr"));
+
+      for (const status of remainingStatuses) {
+        orderedGroups.set(status, groups.get(status));
+      }
+
+      return orderedGroups;
+    }
+
+    function getVisibleTickets() {
+      return window.lastTicketsData || null;
+    }
+
+    function createTicketCard(ticket) {
+      const article = document.createElement("article");
+      article.className = "ticket";
+      article.tabIndex = 0;
+
+      const title = document.createElement("h3");
+      title.textContent = `${normalizeValue(ticket["ticket-id"]) || "?"} - ${normalizeValue(ticket["titre"]) || "Sans titre"}`;
+      article.appendChild(title);
+
+      const activate = () => {
+        board.querySelectorAll(".ticket.active").forEach((element) => {
+          element.classList.remove("active");
+        });
+        article.classList.add("active");
+        renderTicketDetail(ticket);
+        openDrawer();
+      };
+
+      article.addEventListener("click", activate);
+      article.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          activate();
+        }
+      });
+
+      return article;
+    }
+
+    function renderTicketDetail(ticket) {
+      ticketDetail.innerHTML = "";
+
+      const title = document.createElement("h2");
+      title.textContent = `${normalizeValue(ticket["ticket-id"]) || "?"} - ${normalizeValue(ticket["titre"]) || "Sans titre"}`;
+      ticketDetail.appendChild(title);
+
+      const meta = document.createElement("div");
+      meta.className = "detail-meta";
+      appendMeta(meta, "Statut", ticket["statut"]);
+      appendMeta(meta, "Auteur", ticket["auteur"]);
+      appendMeta(meta, "Type", ticket["type"]);
+      appendMeta(meta, "Module", ticket["module"]);
+      appendMeta(meta, "Client", ticket["client"]);
+      appendMeta(meta, "Ouverture", ticket["date-ouverture"]);
+      appendMeta(meta, "Sprint", ticket["sprint"]);
+      appendMeta(meta, "Lot", ticket["lot"]);
+      appendMeta(meta, "Backlog production", ticket["backlog-production"] === "o" ? "Oui" : "");
+      appendMeta(meta, "Estimation", ticket["estimation"]);
+
+      if (meta.childElementCount > 0) {
+        ticketDetail.appendChild(meta);
+      }
+
+      const tags = document.createElement("div");
+      tags.className = "detail-tags";
+      appendTag(tags, ticket["type"]);
+      appendTag(tags, ticket["module"]);
+      appendTag(tags, ticket["client"]);
+
+      if (tags.childElementCount > 0) {
+        ticketDetail.appendChild(tags);
+      }
+
+      const description = normalizeDescription(ticket["description"]);
+      if (description !== "") {
+        const content = document.createElement("div");
+        content.className = "ticket-description";
+        content.innerHTML = description;
+        ticketDetail.appendChild(content);
+      }
+    }
+
+    function openDrawer() {
+      drawer.classList.add("open");
+      drawer.setAttribute("aria-hidden", "false");
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove("open");
+      drawer.setAttribute("aria-hidden", "true");
+    }
+
+    function appendMeta(container, label, value) {
+      const text = normalizeValue(value);
+      if (!text) {
+        return;
+      }
+
+      const row = document.createElement("div");
+      const strong = document.createElement("strong");
+      strong.textContent = `${label}: `;
+      row.appendChild(strong);
+      row.append(text);
+      container.appendChild(row);
+    }
+
+    function appendTag(container, value) {
+      const text = normalizeValue(value);
+      if (!text) {
+        return;
+      }
+
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = text;
+      container.appendChild(tag);
+    }
+
+    function sanitizeDescriptions(value) {
+      if (Array.isArray(value)) {
+        return value.map(sanitizeDescriptions);
+      }
+
+      if (!value || typeof value !== "object") {
+        return value;
+      }
+
+      const result = {};
+
+      for (const [key, entry] of Object.entries(value)) {
+        if (key === "description" && typeof entry === "string") {
+          result[key] = stripEmbeddedBase64Images(entry);
+          continue;
+        }
+
+        result[key] = sanitizeDescriptions(entry);
+      }
+
+      return result;
+    }
+
+    function stripEmbeddedBase64Images(text) {
+      return text.replace(/<img\b[^>]*src=["']data:image\/[^"']+["'][^>]*>/gi, "").trim();
+    }
+
+    function normalizeDescription(value) {
+      if (typeof value !== "string") {
+        return "";
+      }
+
+      return stripEmbeddedBase64Images(value).trim();
+    }
+
+    function normalizeValue(value) {
+      if (value === null || value === undefined) {
+        return "";
+      }
+
+      return String(value).trim();
+    }
+
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.style.display = "block";
+    }
+
+    window.lastTicketsData = null;
+
+    sendButton.addEventListener("click", sendRequest);
+    closeDrawerButton.addEventListener("click", closeDrawer);
+    drawer.addEventListener("click", (event) => {
+      if (event.target === drawer) {
+        closeDrawer();
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeDrawer();
+      }
+    });
+  </script>
+</body>
+</html>
