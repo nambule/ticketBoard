@@ -27,6 +27,14 @@
       --done-soft: #eef8f1;
       --done-line: #2f9d5b;
       --flash: #ff6d47;
+      --age-new-bg: #e9f1ff;
+      --age-new-text: #2357d8;
+      --age-mid-bg: #f1f5fb;
+      --age-mid-text: #52657e;
+      --age-old-bg: #f6f3ec;
+      --age-old-text: #8b744c;
+      --age-legacy-bg: #f4f4f5;
+      --age-legacy-text: #777a82;
     }
 
     * {
@@ -481,12 +489,51 @@
 
     .ticket-id {
       display: block;
-      margin-bottom: 8px;
       color: var(--muted);
       font-size: 0.74rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
+    }
+
+    .ticket-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .ticket-age {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .ticket-age.age-fresh {
+      background: var(--age-new-bg);
+      color: var(--age-new-text);
+    }
+
+    .ticket-age.age-mature {
+      background: var(--age-mid-bg);
+      color: var(--age-mid-text);
+    }
+
+    .ticket-age.age-aging {
+      background: var(--age-old-bg);
+      color: var(--age-old-text);
+    }
+
+    .ticket-age.age-legacy {
+      background: var(--age-legacy-bg);
+      color: var(--age-legacy-text);
     }
 
     .ticket.active {
@@ -567,6 +614,15 @@
       flex-wrap: wrap;
       color: var(--muted);
       font-size: 0.92rem;
+    }
+
+    .detail-age {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.9rem;
     }
 
     .ticket-id-badge {
@@ -708,6 +764,11 @@
         padding-left: 16px;
         padding-right: 16px;
       }
+
+      .ticket-topline {
+        align-items: flex-start;
+        flex-direction: column;
+      }
     }
   </style>
 </head>
@@ -833,6 +894,8 @@
     ];
     const OPTIONAL_STATUSES = new Set(["Réserve", "Annulé", "Refusé / won't fix"]);
     let showOptionalStatuses = false;
+    let showDoneStatuses = true;
+    let selectedAgeBucket = "all";
 
     if (window.location.protocol === "file:") {
       originWarning.textContent = "Open this page through a local web server. Loading it with file:// cannot call proxy.php reliably.";
@@ -907,7 +970,9 @@
       const rawData = payload && typeof payload === "object" && "data" in payload
         ? payload.data
         : payload;
-      const tickets = Array.isArray(rawData) ? sanitizeDescriptions(rawData) : null;
+      const tickets = Array.isArray(rawData)
+        ? sanitizeDescriptions(rawData).filter((ticket) => !isAnomalyTicket(ticket))
+        : null;
 
       if (!tickets) {
         showError("The API response is not a JSON array of tickets.");
@@ -986,8 +1051,20 @@
       summaryRight.className = "summary-right";
 
       const trackedTickets = tickets.filter((ticket) => {
+        if (!matchesAgeFilter(ticket)) {
+          return false;
+        }
+
         const status = normalizeValue(ticket["statut"]) || "Sans statut";
-        return !OPTIONAL_STATUSES.has(status);
+        if (OPTIONAL_STATUSES.has(status)) {
+          return false;
+        }
+
+        if (!showDoneStatuses && getPhaseClass(status) === "phase-done") {
+          return false;
+        }
+
+        return true;
       });
 
       const total = document.createElement("div");
@@ -1040,6 +1117,66 @@
       toggle.append(checkbox, text);
       summaryLeft.appendChild(toggle);
 
+      const doneToggle = document.createElement("label");
+      doneToggle.className = "toggle";
+
+      const doneCheckbox = document.createElement("input");
+      doneCheckbox.type = "checkbox";
+      doneCheckbox.checked = showDoneStatuses;
+      doneCheckbox.addEventListener("change", () => {
+        showDoneStatuses = doneCheckbox.checked;
+        const visibleTickets = getVisibleTickets();
+        if (visibleTickets) {
+          renderBoard({ data: visibleTickets });
+        }
+      });
+
+      const doneText = document.createElement("span");
+      doneText.textContent = "Show done phase";
+
+      doneToggle.append(doneCheckbox, doneText);
+      summaryLeft.appendChild(doneToggle);
+
+      const ageFilter = document.createElement("label");
+      ageFilter.className = "toggle";
+
+      const ageSelect = document.createElement("select");
+      ageSelect.style.width = "auto";
+      ageSelect.style.padding = "4px 8px";
+      ageSelect.style.borderRadius = "8px";
+      ageSelect.style.border = "1px solid rgba(16, 32, 51, 0.08)";
+      ageSelect.style.background = "#fff";
+
+      const ageOptions = [
+        { value: "all", label: "All ages" },
+        { value: "age-fresh", label: "<1y" },
+        { value: "age-mature", label: "<3y" },
+        { value: "age-aging", label: "<5y" },
+        { value: "age-legacy", label: "5y+" }
+      ];
+
+      for (const optionData of ageOptions) {
+        const option = document.createElement("option");
+        option.value = optionData.value;
+        option.textContent = optionData.label;
+        option.selected = selectedAgeBucket === optionData.value;
+        ageSelect.appendChild(option);
+      }
+
+      ageSelect.addEventListener("change", () => {
+        selectedAgeBucket = ageSelect.value;
+        const visibleTickets = getVisibleTickets();
+        if (visibleTickets) {
+          renderBoard({ data: visibleTickets });
+        }
+      });
+
+      const ageText = document.createElement("span");
+      ageText.textContent = "Seniority";
+
+      ageFilter.append(ageText, ageSelect);
+      summaryLeft.appendChild(ageFilter);
+
       summary.append(summaryLeft, summaryRight);
     }
 
@@ -1048,6 +1185,10 @@
 
       for (const ticket of tickets) {
         const status = normalizeValue(ticket["statut"]) || "Sans statut";
+
+        if (!matchesAgeFilter(ticket)) {
+          continue;
+        }
 
         if (!groups.has(status)) {
           groups.set(status, []);
@@ -1064,12 +1205,17 @@
             continue;
           }
 
+          if (!showDoneStatuses && getPhaseClass(status) === "phase-done") {
+            continue;
+          }
+
           orderedGroups.set(status, groups.get(status));
         }
       }
 
       const remainingStatuses = [...groups.keys()]
         .filter((status) => !STATUS_ORDER.includes(status))
+        .filter((status) => showDoneStatuses || getPhaseClass(status) !== "phase-done")
         .sort((left, right) => left.localeCompare(right, "fr"));
 
       for (const status of remainingStatuses) {
@@ -1077,6 +1223,24 @@
       }
 
       return orderedGroups;
+    }
+
+    function matchesAgeFilter(ticket) {
+      if (selectedAgeBucket === "all") {
+        return true;
+      }
+
+      const age = getTicketAge(ticket);
+      if (!age) {
+        return false;
+      }
+
+      return age.bucketClass === selectedAgeBucket;
+    }
+
+    function isAnomalyTicket(ticket) {
+      const type = normalizeValue(ticket["type"]).toLowerCase();
+      return type === "anomalie" || type === "anomaly";
     }
 
     function getVisibleTickets() {
@@ -1088,13 +1252,28 @@
       article.className = "ticket";
       article.tabIndex = 0;
 
+      const age = getTicketAge(ticket);
+
+      const topline = document.createElement("div");
+      topline.className = "ticket-topline";
+
       const id = document.createElement("span");
       id.className = "ticket-id";
       id.textContent = `Ticket ${normalizeValue(ticket["ticket-id"]) || "?"}`;
 
+      topline.appendChild(id);
+
+      if (age) {
+        const ageBadge = document.createElement("span");
+        ageBadge.className = `ticket-age ${age.bucketClass}`;
+        ageBadge.textContent = age.shortLabel;
+        ageBadge.setAttribute("aria-label", age.longLabel);
+        topline.appendChild(ageBadge);
+      }
+
       const title = document.createElement("h3");
       title.textContent = normalizeValue(ticket["titre"]) || "Sans titre";
-      article.append(id, title);
+      article.append(topline, title);
 
       const activate = () => {
         board.querySelectorAll(".ticket.active").forEach((element) => {
@@ -1121,6 +1300,7 @@
 
       const status = normalizeValue(ticket["statut"]) || "Sans statut";
       const phaseClass = getPhaseClass(status);
+      const age = getTicketAge(ticket);
 
       const top = document.createElement("section");
       top.className = "ticket-sheet-top";
@@ -1144,6 +1324,22 @@
 
       idLine.append(idBadge, phaseChip, statusText);
       top.append(idLine, title);
+
+      if (age) {
+        const ageLine = document.createElement("div");
+        ageLine.className = "detail-age";
+
+        const ageBadge = document.createElement("span");
+        ageBadge.className = `ticket-age ${age.bucketClass}`;
+        ageBadge.textContent = age.bucketLabel;
+
+        const ageText = document.createElement("span");
+        ageText.textContent = `${age.exactDate} • opened ${age.longLabel}`;
+
+        ageLine.append(ageBadge, ageText);
+        top.appendChild(ageLine);
+      }
+
       ticketDetail.appendChild(top);
 
       const meta = document.createElement("div");
@@ -1242,6 +1438,77 @@
       }
 
       return "Done phase";
+    }
+
+    function getTicketAge(ticket) {
+      const rawDate = normalizeValue(ticket["date-ouverture"]);
+      if (!rawDate) {
+        return null;
+      }
+
+      const openedAt = new Date(`${rawDate}T00:00:00`);
+      if (Number.isNaN(openedAt.getTime())) {
+        return null;
+      }
+
+      const now = new Date();
+      const msDiff = now.getTime() - openedAt.getTime();
+      if (msDiff < 0) {
+        return null;
+      }
+
+      const dayMs = 24 * 60 * 60 * 1000;
+      const days = Math.floor(msDiff / dayMs);
+      const years = msDiff / (365.25 * dayMs);
+
+      let bucketClass = "age-legacy";
+      let bucketLabel = "5y+";
+
+      if (years < 1) {
+        bucketClass = "age-fresh";
+        bucketLabel = "<1y";
+      } else if (years < 3) {
+        bucketClass = "age-mature";
+        bucketLabel = "<3y";
+      } else if (years < 5) {
+        bucketClass = "age-aging";
+        bucketLabel = "<5y";
+      }
+
+      return {
+        bucketClass,
+        bucketLabel,
+        shortLabel: formatShortAge(days),
+        longLabel: formatLongAge(days),
+        exactDate: rawDate
+      };
+    }
+
+    function formatShortAge(days) {
+      if (days < 30) {
+        return `${Math.max(days, 1)}d`;
+      }
+
+      if (days < 365) {
+        return `${Math.floor(days / 30)}m`;
+      }
+
+      return `${Math.floor(days / 365)}y`;
+    }
+
+    function formatLongAge(days) {
+      if (days < 30) {
+        const resolvedDays = Math.max(days, 1);
+        return `${resolvedDays} day${resolvedDays === 1 ? "" : "s"} ago`;
+      }
+
+      if (days < 365) {
+        const months = Math.floor(days / 30);
+        return `${months} month${months === 1 ? "" : "s"} ago`;
+      }
+
+      const years = Math.floor(days / 365);
+      return `${years} year${years === 1 ? "" : "s"} ago`;
     }
 
     function openDrawer() {
