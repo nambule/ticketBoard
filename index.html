@@ -615,6 +615,12 @@
       cursor: pointer;
     }
 
+    a.secondary-button {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+    }
+
     .secondary-button:disabled {
       opacity: 0.55;
       cursor: wait;
@@ -667,6 +673,11 @@
       color: var(--accent);
       padding: 6px 10px;
       font-weight: 600;
+    }
+
+    .external-ticket-link {
+      padding: 6px 10px;
+      font-size: 0.86rem;
     }
 
     .detail-section {
@@ -1288,7 +1299,14 @@
         return false;
       }
 
-      return age.bucketClass === selectedAgeBucket;
+      const includedBuckets = {
+        "age-fresh": ["age-fresh"],
+        "age-mature": ["age-fresh", "age-mature"],
+        "age-aging": ["age-fresh", "age-mature", "age-aging"],
+        "age-legacy": ["age-legacy"]
+      };
+
+      return (includedBuckets[selectedAgeBucket] || []).includes(age.bucketClass);
     }
 
     function isAnomalyTicket(ticket) {
@@ -1363,7 +1381,8 @@
 
       const idBadge = document.createElement("span");
       idBadge.className = "ticket-id-badge";
-      idBadge.textContent = normalizeValue(ticket["ticket-id"]) || "?";
+      const ticketId = normalizeValue(ticket["ticket-id"]);
+      idBadge.textContent = ticketId || "?";
 
       const phaseChip = document.createElement("span");
       phaseChip.className = `phase-chip ${phaseClass}`;
@@ -1372,10 +1391,24 @@
       const statusText = document.createElement("span");
       statusText.textContent = status;
 
+      const externalTicketUrl = buildExternalTicketUrl(ticketId);
+      const externalTicketLink = document.createElement("a");
+      if (externalTicketUrl) {
+        externalTicketLink.className = "secondary-button external-ticket-link";
+        externalTicketLink.href = externalTicketUrl;
+        externalTicketLink.target = "_blank";
+        externalTicketLink.rel = "noopener noreferrer";
+        externalTicketLink.textContent = "Open in Adequasys";
+        externalTicketLink.setAttribute("aria-label", `Open ticket ${ticketId} in Adequasys`);
+      }
+
       const title = document.createElement("h2");
       title.textContent = normalizeValue(ticket["titre"]) || "Sans titre";
 
       idLine.append(idBadge, phaseChip, statusText);
+      if (externalTicketUrl) {
+        idLine.appendChild(externalTicketLink);
+      }
       top.append(idLine, title);
 
       if (age) {
@@ -1698,6 +1731,20 @@
     function closeDrawer() {
       drawer.classList.remove("open");
       drawer.setAttribute("aria-hidden", "true");
+    }
+
+    function buildExternalTicketUrl(ticketId) {
+      const normalizedTicketId = normalizeValue(ticketId);
+      if (!normalizedTicketId) {
+        return null;
+      }
+
+      const url = new URL("https://support.adequasys.com/System/Setup/Menu/redirect.php");
+      url.searchParams.set("_c", "l|3839;ws|support");
+      url.searchParams.set("withContext", "1");
+      url.searchParams.set("cles_formulaire_param[0]", "BTPU_Idx");
+      url.searchParams.set("valeur_cles_formulaire_param[0]", normalizedTicketId);
+      return url.toString();
     }
 
     function appendMeta(container, label, value) {
